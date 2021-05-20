@@ -1,0 +1,21 @@
+﻿.custom-control-override {
+  padding-left: 3.3rem;
+  margin-top: 0.3rem;
+}
+
+.versionDiv {
+  text-align: center;
+  font-size: small;
+}
+
+#ex1Slider .slider-selection {
+	background: #BABABA;
+}
+
+.strippedLedList > div:nth-of-type(odd) > .ledStriped {
+  background-color:cyan;
+}
+
+.strippedLedList > div:nth-of-type(even) > .ledStriped {
+  background-color:rgb(188, 219, 219);
+}

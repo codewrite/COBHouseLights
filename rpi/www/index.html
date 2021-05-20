@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  	<meta charset="UTF-8">
+	  <meta name="keywords" content="cob led lights">
+  	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon"/>
+    <title>COB Lights</title>
+    <!-- TODO: Update to VueJS 3  -->
+	  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+	  <script src="https://cdn.jsdelivr.net/npm/axios@0.20.0/dist/axios.min.js"></script>
+	  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-slider@11.0.2/dist/bootstrap-slider.min.js"></script>
+    <script src="init.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-slider/dist/css/bootstrap-slider.min.css" rel="stylesheet"/>
+	  <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" type="text/css" href="css/style.css?v=1">    
+  </head>
+  <body>
+    <script>
+      // Update this every time the website is modified
+      var indexPageVersion = "v0.001";
+    </script>
+    <div id="app" class="container-fluid">
+      <div class="row">
+        <div class="col-sm-7"><h1>COB Lights</h1></div>
+        <div class="col-sm-2">
+          <input type="text" class="form-control" placeholder="Username" v-model="username" :disabled="loggedIn">
+        </div>
+        <div class="col-sm-2">
+          <input type="password" class="form-control" placeholder="Password" v-model="password" v-if="!loggedIn">
+        </div>
+        <div class="col-sm-1">
+          <button class="btn btn-primary" v-if="!loggedIn" @click="login">Login</button>
+          <button class="btn btn-primary" v-if="loggedIn" @click="logout">Logout</button>
+        </div>
+      </div>        
+      <frame-page :username="username" :password="password"></frame-page>
+      <hr/>
+      <div class="versionDiv">{{ pageVersion() }}: Last Update: {{ lastModified() }}</div>
+    </div>
+    <script>
+      var lastModifiedTimestamp = new Date(document.lastModified).toISOString()
+                                        .replace(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}).*/g,'$142$3$4$5');
+      $.ajaxSetup({cache: true});
+      var globalLoad =  includeJS("components/globalConstants.js?v=" + lastModifiedTimestamp).always(function() {
+			  globalConstants.indexPageVersion = indexPageVersion;
+        globalConstants.lastModifiedTimestamp = lastModifiedTimestamp;
+      });
+      var framePageLoad = includeJS("components/framepage.js?v=" + lastModifiedTimestamp).always(function() {});
+      var ledControlLoad = includeJS("components/ledcontrol.js?v=" + lastModifiedTimestamp).always(function() {});
+      Promise.all([globalLoad, framePageLoad, ledControlLoad]).then((values) => {
+        console.log(values);
+        includeJS("index.js?v=" + lastModifiedTimestamp);
+      });
+      $.ajaxSetup({cache: false});
+    </script>
+  </body>
+</html>

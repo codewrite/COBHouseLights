@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "/etc/nginx",
+			"name": "/etc/nginx"
+		},
+		{
+			"path": "/var/log/nginx",
+			"name": "/var/log/nginx"
+		},
+		{
+			"path": "/var/www",
+			"name": "/var/www"
+		},
+		{
+			"path": "/etc/ssl",
+			"name": "/etc/ssl"
+		},
+		{
+			"path": "."
+		},
+	],
+	"settings": {}
+}

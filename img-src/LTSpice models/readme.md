@@ -1,0 +1,1 @@
+Copy the custom folder to c:\users\$env:username\Documents\LTspiceXVII\lib\sym

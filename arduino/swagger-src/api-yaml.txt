@@ -1,0 +1,144 @@
+#
+# Remove this comment block and minify @ https://www.cleancss.com/json-minify/
+# Replace " with \"
+# copy block to swaggerJSON
+# References:
+# Swagger docs: https://swagger.io/docs/specification/2-0
+# Edit in; https://editor.swagger.io/
+# YAML to JSON: https://onlineyamltools.com/convert-yaml-to-json
+openapi: 3.0.1
+info:
+  title: LED COB API
+  description: API for controlling COB LEDs
+  version: '0.1'
+servers:
+  - url: /
+tags:
+  - name: leds
+    description: LED operations
+  - name: pwr
+    description: Power operations
+  - name: admin
+    description: Admin operations
+paths:
+  '/leds':
+    get:
+      tags:
+        - leds
+      summary: Get all the LED values
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              examples:
+                various values:
+                  value:
+                    [ 512, 1023, 0, 300, 0, 200 ]
+      security:
+        - basicAuth: []
+  '/leds/{id}':
+    get:
+      tags:
+        - leds
+      summary: Get the LED value
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              examples:
+                min brightness:
+                  value:
+                    brightness: 0
+                max brightness:
+                  value:
+                    brightness: 1023
+      security:
+        - basicAuth: []
+  '/leds/{id}/{value}':
+    put:
+      tags:
+        - leds
+      summary: Set the LED value
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: value
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content: {}
+      security:
+        - basicAuth: []
+  /pwr:
+    get:
+      tags:
+        - pwr
+      summary: Get the power value
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              examples:
+                power off:
+                  value:
+                    power: 0
+                power on:
+                  value:
+                    power: 1
+      security:
+        - basicAuth: []
+  '/pwr/{value}':
+    put:
+      tags:
+        - pwr
+      summary: Set the power on or off
+      parameters:
+        - name: value
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content: {}
+      security:
+        - basicAuth: []
+  /forcelogin:
+    get:
+      tags:
+        - admin
+      summary: Force Login
+      responses:
+        '401':
+          description: Success
+          content: {}
+components:
+  responses:
+    UnauthorizedError:
+      description: Authentication information is missing or invalid
+      headers:
+        WWW_Authenticate:
+          schema:
+            type: string
+      content: {}
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
