@@ -34,7 +34,12 @@ paths:
               examples:
                 various values:
                   value:
-                    [ 512, 1023, 0, 300, 0, 200 ]
+                    [ { "on": true, "brightness":512 },
+                      { "on": true, "brightness":1023 },
+                      { "on": false, "brightness":0 },
+                      { "on": false, "brightness":300 },
+                      { "on": true, "brightness":0 },
+                      { "on": false, "brightness":200 } ]
       security:
         - basicAuth: []
   '/leds/{id}':
@@ -54,15 +59,20 @@ paths:
           content:
             application/json:
               examples:
-                min brightness:
+                min brightness, LED on:
                   value:
+                    on: true
                     brightness: 0
-                max brightness:
+                max brightness, LED on:
                   value:
+                    on: true
                     brightness: 1023
+                brightness set, LED off:
+                  value:
+                    on: false
+                    brightness: 500
       security:
         - basicAuth: []
-  '/leds/{id}/{value}':
     put:
       tags:
         - leds
@@ -73,11 +83,24 @@ paths:
           required: true
           schema:
             type: integer
-        - name: value
-          in: path
-          required: true
-          schema:
-            type: integer
+      requestBody:
+        description: Update LED settings
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Led'
+            examples:
+              LED on, mid level brightness:
+                value:
+                  on: true
+                  brightness: 512
+              LED off:
+                value:
+                  on: false
+              LED on, use last brightness:
+                value:
+                  on: true
       responses:
         '200':
           description: Success
@@ -142,3 +165,12 @@ components:
     basicAuth:
       type: http
       scheme: basic
+  schemas:
+    Led:
+      type: "object"
+      properties:
+        on:
+          type: "boolean"
+        brightness:
+          type: "integer"
+          format: "int32"

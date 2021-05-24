@@ -12,6 +12,9 @@
 #define STA_WWW_USER "user login name here"
 #define STA_WWW_PASSWORD "user password here"
 #define STACNAME "mDNS name here"
+#define STA_IPAddress 192, 168, 1, 123
+#define STA_gateway 192, 168, 1, 1
+#define STA_subnet 255, 255, 0, 0
 #endif
 
 // The certificate is stored in PMEM

@@ -9,6 +9,7 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServerSecure.h>
 #include <ESP8266mDNS.h>
+#include <ArduinoJson.h>
 #include <Ticker.h>
 #include <Wire.h>
 #include <Adafruit_INA219.h>
@@ -66,16 +67,20 @@ void SetupApi()
   {
     checkAuthenticated([]()
     {
-      String brightnessArrayStr = "[ ";
+      String brightnessArrayStr = "[";
       for (int i=0; i<NUM_LED_PINS; i++)
       {
+        brightnessArrayStr += "{\"on\":";
+        brightnessArrayStr += pinOnValue[i] ? "true" : "false";
+        brightnessArrayStr += ",\"brightness\":";
         brightnessArrayStr += pinPWMValue[i];
+        brightnessArrayStr += "}";
         if (i < NUM_LED_PINS-1)
         {
-          brightnessArrayStr += ", ";
+          brightnessArrayStr += ",";
         }
       }
-      brightnessArrayStr += " ]";
+      brightnessArrayStr += "]";
       server.send(200, "application/json", brightnessArrayStr);
     },[]()
     {
@@ -83,44 +88,54 @@ void SetupApi()
     });
   });
 
-  server.on(UriBraces("/leds/{}"), HTTP_OPTIONS, []() { SendOptionsResponseForCORS("GET"); });
+  server.on(UriBraces("/leds/{}"), HTTP_OPTIONS, []() { SendOptionsResponseForCORS("GET,PUT"); });
   server.on(UriBraces("/leds/{}"), HTTP_GET, []()
   {
     checkAuthenticated([]()
     {
-      int led = server.pathArg(0).toInt();
-      char brightnessStr[6];
-      sprintf(brightnessStr, "%d", pinPWMValue[led]);
-      server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-      server.send(200, "application/json", "{ \"brightness\": ");
-      server.sendContent(brightnessStr);
-      server.sendContent(" }");
+      int ledIndex = server.pathArg(0).toInt() - 1;
+      if (ledIndex >=0 && ledIndex < NUM_LED_PINS)
+      {
+        String brightnessStr = "{\"on\":";
+        brightnessStr += pinOnValue[ledIndex] ? "true" : "false";
+        brightnessStr += ",\"brightness\":";
+        brightnessStr += pinPWMValue[ledIndex];
+        brightnessStr += "}";
+        //server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+        server.send(200, "application/json", brightnessStr);
+        //server.sendContent(brightnessStr);  //this is slow! - so construct string first instead
+      }
     },[]()
     {
       SendNotAuthorized();
     });
   });
 
-  server.on(UriBraces("/leds/{}/{}"), HTTP_OPTIONS, []() { SendOptionsResponseForCORS("PUT"); });
-  server.on(UriBraces("/leds/{}/{}"), HTTP_PUT, []()
+  // For HTTP_OPTIONS see GET method
+  server.on(UriBraces("/leds/{}"), HTTP_PUT, []()
   {
     checkAuthenticated([]()
     {
-      int led = server.pathArg(0).toInt();
-      int ledBrightness = server.pathArg(1).toInt();
-      int pin = LED_BUILTIN;
-      for (int i=0; i<NUM_LED_PINS; i++)
+      int ledIndex = server.pathArg(0).toInt() - 1;
+      if (ledIndex >=0 && ledIndex < NUM_LED_PINS)
       {
-        if (pinMap[i][0] == led)
+        DynamicJsonDocument doc(200);
+        deserializeJson(doc, server.arg("plain"));
+        int ledOn = doc.containsKey("on") ? doc["on"] : pinOnValue[ledIndex];
+        int ledBrightness = doc.containsKey("brightness") ? doc["brightness"] : pinPWMValue[ledIndex];
+        int pin = LED_BUILTIN;
+        for (int i=0; i<NUM_LED_PINS; i++)
         {
-          pin = pinMap[i][1];
-          break;
+          if (pinMap[i][0] == ledIndex + 1)
+          {
+            pin = pinMap[i][1];
+            break;
+          }
         }
+        analogWrite(pin, ledOn ? ledBrightness : 0);
+        pinOnValue[ledIndex] = ledOn;
+        pinPWMValue[ledIndex] = ledBrightness;
       }
-      Serial.print("LED");  Serial.print(led);  Serial.print(", pin");  Serial.print(pin);
-      Serial.print(" brightness: ");  Serial.println(ledBrightness);
-      analogWrite(pin, ledBrightness);
-      pinPWMValue[led] = ledBrightness;
       SendOK();
     },[]()
     {

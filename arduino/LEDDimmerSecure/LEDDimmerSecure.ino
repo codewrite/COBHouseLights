@@ -21,6 +21,10 @@
 const char* ssid = STASSID;
 const char* password = STAPSK;
 
+IPAddress local_IP(STA_IPAddress);
+IPAddress gateway(STA_gateway);
+IPAddress subnet(STA_subnet);
+
 const char* www_username = STA_WWW_USER;
 const char* www_password = STA_WWW_PASSWORD;
 
@@ -40,6 +44,7 @@ Adafruit_INA219 ina219;
 // See: https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
 const int pinMap[][2] = { {1,D3}, {2,D4}, {3,D5}, {4,D6}, {5,D7}, {6,D8} };
 const int NUM_LED_PINS = sizeof(pinMap)/sizeof(pinMap[0]);
+bool pinOnValue[NUM_LED_PINS];
 int pinPWMValue[NUM_LED_PINS];
 int numAuthenticationFails = 0;
 int authenticateDelay = 0;
@@ -85,6 +90,7 @@ void setup(void)
   for (int i=0; i<NUM_LED_PINS; i++)
   {
     pinMode(pinMap[i][1], OUTPUT);
+    pinOnValue[i] = false;
     pinPWMValue[i] = 0;
   }
   Serial.begin(115200);
@@ -93,6 +99,11 @@ void setup(void)
   {
     Serial.println("Failed to find INA219 chip");
     while (1) { delay(10); }
+  }
+  // Configures static IP address
+  if (!WiFi.config(local_IP, gateway, subnet))
+  {
+    Serial.println("STA Failed to configure");
   }
   WiFi.begin(ssid, password);
   // Wait for connection
