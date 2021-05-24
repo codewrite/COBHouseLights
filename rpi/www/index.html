@@ -23,7 +23,15 @@
     </script>
     <div id="app" class="container-fluid">
       <div class="row">
-        <div class="col-sm-7"><h1>COB Lights</h1></div>
+        <div class="col-sm-4"><h1>COB Lights</h1></div>
+        <div class="col-sm-1">
+          <a class="btn btn-primary" href="?page=onoffcontrol">On/Off</a>
+        </div>
+        <div class="col-sm-1">
+          <a class="btn btn-primary" href="?page=ledcontrol">Brightness</a>
+        </div>
+        <div class="col-sm-1">
+        </div>
         <div class="col-sm-2">
           <input type="text" class="form-control" placeholder="Username" v-model="username" :disabled="loggedIn">
         </div>
@@ -48,8 +56,9 @@
         globalConstants.lastModifiedTimestamp = lastModifiedTimestamp;
       });
       var framePageLoad = includeJS("components/framepage.js?v=" + lastModifiedTimestamp).always(function() {});
-      var ledControlLoad = includeJS("components/ledcontrol.js?v=" + lastModifiedTimestamp).always(function() {});
-      Promise.all([globalLoad, framePageLoad, ledControlLoad]).then((values) => {
+      var ledControlLoad = includeJS("components/ledControl.js?v=" + lastModifiedTimestamp).always(function() {});
+      var onOffControlLoad = includeJS("components/onOffControl.js?v=" + lastModifiedTimestamp).always(function() {});
+      Promise.all([globalLoad, framePageLoad, ledControlLoad, onOffControlLoad]).then((values) => {
         console.log(values);
         includeJS("index.js?v=" + lastModifiedTimestamp);
       });

@@ -5,7 +5,8 @@ Vue.component('led-control', {
     },
     data: function () {
       return {
-        ledControlUrl: "https://wemos1/leds/",
+        //ledControlUrl: "https://wemos1/leds",
+        ledControlUrl: "https://192.168.1.211/leds",
         ledBrightness: []
       }
     },
@@ -29,6 +30,7 @@ Vue.component('led-control', {
     watch: {
     },
     created: function() {
+      this.getLeds();
       for (i=0; i<6; i++)
       {
         this.ledBrightness[i] = 0;
@@ -37,8 +39,22 @@ Vue.component('led-control', {
     methods: {
       setLedBrightness: function (led, brightness) {
         axios
-          .put(this.ledControlUrl + led + "/" + brightness, { crossdomain: true }, { auth: { username: this.username, password: this.password } })
+          .put(this.ledControlUrl + "/" + led, { brightness: brightness }, { auth: { username: this.username, password: this.password } })
           .then(response => {
+          })
+          .catch(error => {
+            console.log(error)
+          })
+          .finally(() => { });
+      },
+      getLeds: function() {
+        axios
+          .get(this.ledControlUrl, { auth: { username: this.username, password: this.password } })
+          .then(response => {
+            for (i=0; i<6; i++)
+            {
+              Vue.set(this.ledBrightness, i, response.data[i].brightness);
+            }
           })
           .catch(error => {
             console.log(error)
