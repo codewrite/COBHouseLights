@@ -1,6 +1,11 @@
 /*
  * Research links:
- * https://techtutorialsx.com/2017/05/28/esp8266-adding-swagger-ui-to-rest-api/
+ * https://github.com/swagger-api/swagger-ui
+ * https://unpkg.com/browse/swagger-ui/
+ * https://unpkg.com/browse/swagger-ui-dist/
+ * https://stackoverflow.com/questions/55733609/display-swagger-ui-on-flask-without-any-hookups
+ * https://techtutorialsx.com/2017/05/28/esp8266-adding-swagger-ui-to-rest-api/  (above links show an easy way than this - this link included for reference only)
+ * SwaggerUIBundle validatorUrl: null => to get rid of error if yaml file is not publicly accessible
  * 
  */
 
