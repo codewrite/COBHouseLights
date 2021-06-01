@@ -5,21 +5,16 @@
  * 
  */
 
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <ESP8266WebServerSecure.h>
-#include <ESP8266mDNS.h>
 #include <ArduinoJson.h>
-#include <Ticker.h>
-#include <Wire.h>
-#include <Adafruit_INA219.h>
-
-#include <uri/UriBraces.h>
-#include <uri/UriRegex.h>
+#if USE_ESP32 == 1
+  #include "analogWrite.h"      // See: https://github.com/Dlloydev/ESP32-ESP32S2-AnalogWrite
+#else
+  #include <uri/UriBraces.h>
+  #include <uri/UriRegex.h>
+#endif
 
 #include "passwords.h"
 #include "swagger.h"
-
 
 void handleNotFound()
 {
@@ -88,8 +83,13 @@ void SetupApi()
     });
   });
 
+#if USE_ESP32 == 1
+  server.on("/leds/*", HTTP_OPTIONS, []() { SendOptionsResponseForCORS("GET,PUT"); });
+  server.on("/leds/*", HTTP_GET, []()
+#else
   server.on(UriBraces("/leds/{}"), HTTP_OPTIONS, []() { SendOptionsResponseForCORS("GET,PUT"); });
   server.on(UriBraces("/leds/{}"), HTTP_GET, []()
+#endif
   {
     checkAuthenticated([]()
     {
@@ -112,7 +112,11 @@ void SetupApi()
   });
 
   // For HTTP_OPTIONS see GET method
+#if USE_ESP32 == 1
+  server.on("/leds/*", HTTP_PUT, []()
+#else
   server.on(UriBraces("/leds/{}"), HTTP_PUT, []()
+#endif
   {
     checkAuthenticated([]()
     {
@@ -150,7 +154,7 @@ void SetupApi()
     {
       server.setContentLength(CONTENT_LENGTH_UNKNOWN);
       server.send(200, "application/json", "{ \"power\": ");
-      server.sendContent((digitalRead(D0) != 0) ? "true" : "false");
+      server.sendContent((digitalRead(PWR_PIN) != 0) ? "true" : "false");
       server.sendContent(" }");
     },[]()
     {
@@ -158,13 +162,18 @@ void SetupApi()
     });
   });
 
+#if USE_ESP32 == 1
+  server.on("/pwr/*", HTTP_OPTIONS, []() { SendOptionsResponseForCORS("PUT"); });
+  server.on("/pwr/*", HTTP_PUT, []()
+#else
   server.on(UriBraces("/pwr/{}"), HTTP_OPTIONS, []() { SendOptionsResponseForCORS("PUT"); });
   server.on(UriBraces("/pwr/{}"), HTTP_PUT, []()
+#endif
   {
     checkAuthenticated([]()
     {
       int pwrOn = server.pathArg(0).toInt();
-      digitalWrite(D0, pwrOn);
+      digitalWrite(PWR_PIN, pwrOn);
       SendOK();
     },[]()
     {
