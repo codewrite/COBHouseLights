@@ -1,10 +1,10 @@
 #
-# Remove this comment block and minify @ https://www.cleancss.com/json-minify/
-# Replace " with \"
-# copy block to swaggerJSON
+# Remove this comment block and edit in; https://editor.swagger.io/
+# Minify @ https://onlineyamltools.com/minify-yaml. Copy to yaml-min.txt
+# Run yaml-transform.ps1
+# copy yaml-arduino.txt to swaggerYAML
 # References:
 # Swagger docs: https://swagger.io/docs/specification/2-0
-# Edit in; https://editor.swagger.io/
 # YAML to JSON: https://onlineyamltools.com/convert-yaml-to-json
 openapi: 3.0.1
 info:
@@ -18,6 +18,8 @@ tags:
     description: LED operations
   - name: pwr
     description: Power operations
+  - name: status
+    description: Status operations
   - name: admin
     description: Admin operations
 paths:
@@ -31,6 +33,10 @@ paths:
           description: Success
           content:
             application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Led'
               examples:
                 various values:
                   value:
@@ -58,6 +64,8 @@ paths:
           description: Success
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/Led'
               examples:
                 min brightness, LED on:
                   value:
@@ -117,13 +125,18 @@ paths:
           description: Success
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  power:
+                    type: boolean
               examples:
                 power off:
                   value:
-                    power: 0
+                    power: false
                 power on:
                   value:
-                    power: 1
+                    power: true
       security:
         - basicAuth: []
   '/pwr/{value}':
@@ -137,10 +150,46 @@ paths:
           required: true
           schema:
             type: integer
+          examples:
+            power off:
+              value: 0
+            power on:
+              value: 1
       responses:
         '200':
           description: Success
           content: {}
+      security:
+        - basicAuth: []
+  /status:
+    get:
+      tags:
+        - status
+      summary: Get the board status
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+              examples:
+                normal operation:
+                  value:
+                    samples: 10967,
+                    millis: 17663,
+                    busvoltage: 12.18,
+                    current: 197.03,
+                    maxcurrent: 197.88,
+                    lastMessage: ""
+                short circuit:
+                  value:
+                    samples: 36539,
+                    millis: 56638,
+                    busvoltage: 12.21,
+                    current: 6.46,
+                    maxcurrent: 5440,
+                    lastMessage: "Current limit exceeded, current: 5440.00mA"
       security:
         - basicAuth: []
   /forcelogin:
@@ -173,4 +222,24 @@ components:
           type: "boolean"
         brightness:
           type: "integer"
+          format: "int16"
+    Status:
+      type: "object"
+      properties:
+        samples:
+          type: "integer"
           format: "int32"
+        millis:
+          type: "integer"
+          format: "int32"
+        busvoltage:
+          type: "number"
+          format: "float"
+        current:
+          type: "number"
+          format: "float"
+        maxcurrent:
+          type: "number"
+          format: "float"
+        lastMessage:
+          type: "string"

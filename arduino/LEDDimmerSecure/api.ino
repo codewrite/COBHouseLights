@@ -181,5 +181,31 @@ void SetupApi()
     });
   });
 
+  server.on("/status", HTTP_OPTIONS, []() { SendOptionsResponseForCORS("GET"); });
+  server.on("/status", HTTP_GET, []()
+  {
+    checkAuthenticated([]()
+    {
+        String statusStr = "{\"samples\":";
+        statusStr += mCount;
+        statusStr += ",\"millis\":";
+        statusStr += inaMilliDiff;
+        statusStr += ",\"busvoltage\":";
+        statusStr += busvoltage;
+        statusStr += ",\"current\":";
+        statusStr += current_mA;
+        statusStr += ",\"maxcurrent\":";
+        statusStr += maxCurrent;
+        statusStr += ",\"lastMessage\":\"";
+        statusStr += lastMessage;
+        statusStr += "\"}";
+        currentRead = true;
+        server.send(200, "application/json", statusStr);
+    },[]()
+    {
+      SendNotAuthorized();
+    });
+  });
+
   server.onNotFound(handleNotFound);
 }

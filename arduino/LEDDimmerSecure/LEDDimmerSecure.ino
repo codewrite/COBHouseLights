@@ -8,7 +8,7 @@
 // USE_ESP32 => 0 for ESP8266, 1 for ESP32
 #define USE_ESP32 0
 // USE_HTTPS => 0 for HTTP, 1 for HTTPS
-#define USE_HTTPS 1
+#define USE_HTTPS 0
 
 #if USE_ESP32 == 1
   #include <WiFi.h>
@@ -31,6 +31,10 @@
 #include <Ticker.h>
 #include <Wire.h>
 #include <Adafruit_INA219.h>
+
+#if USE_ESP32 == 1
+  #include "analogWrite.h"      // See: https://github.com/Dlloydev/ESP32-ESP32S2-AnalogWrite
+#endif
 
 #include "passwords.h"
 
@@ -72,7 +76,7 @@ Adafruit_INA219 ina219;
   #define PWR_PIN 12
   const int pinMap[][2] = { {1,13}, {2,14}, {3,15}, {4,16}, {5,17}, {6,18} };
 #else
-  #define PWR_PIN 0
+  #define PWR_PIN D0
   const int pinMap[][2] = { {1,D3}, {2,D4}, {3,D5}, {4,D6}, {5,D7}, {6,D8} };
 #endif
 const int NUM_LED_PINS = sizeof(pinMap)/sizeof(pinMap[0]);
@@ -84,16 +88,16 @@ bool inaInitialized = false;
 unsigned long lastInaReportMillis = 0;
 unsigned long lastAuthFailMillis = 0;
 
-bool checkAuthenticated(void(*successFn)(), void(*failureFn)())
+void checkAuthenticated(void(*successFn)(), void(*failureFn)())
 {
   if (authenticateDelay > 0)
   {
-    (*failureFn)();
+    failureFn();
   }
   else if (server.authenticate(www_username, www_password))
   {
     numAuthenticationFails = 0;
-    (*successFn)();
+    successFn();
   }
   else
   {
@@ -105,7 +109,7 @@ bool checkAuthenticated(void(*successFn)(), void(*failureFn)())
       // Slow potential brute force attacks
       Serial.println("wait 5s start");
       authenticateDelay = 5000;
-      (*failureFn)();
+      failureFn();
     }
     else
     {
@@ -122,16 +126,33 @@ void forceLogin()
 
 void setup(void)
 {
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(PWR_PIN, OUTPUT);
-  for (int i=0; i<NUM_LED_PINS; i++)
-  {
-    pinMode(pinMap[i][1], OUTPUT);
-    pinOnValue[i] = false;
-    pinPWMValue[i] = 0;
-  }
   Serial.begin(115200);
   Serial.println("");
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(PWR_PIN, OUTPUT);
+#if USE_ESP32 == 1
+  Serial.print("PWM RES ");
+#endif
+  for (int i=0; i<NUM_LED_PINS; i++)
+  {
+#if USE_ESP32 == 1
+    Serial.print(pinMap[i][1]);
+    Serial.print("=");
+    Serial.print(analogWriteResolution(pinMap[i][1], 10));
+    if (i  < NUM_LED_PINS-1)
+    {
+      Serial.print(", ");
+    }
+    analogWrite(pinMap[i][1], 0);
+#else
+    pinMode(pinMap[i][1], OUTPUT);
+    pinOnValue[i] = false;
+#endif
+    pinPWMValue[i] = 0;
+  }
+#if USE_ESP32 == 1
+  Serial.println("");
+#endif
   inaInitialized = ina219.begin();
   if (!inaInitialized)
   {
@@ -172,8 +193,13 @@ void setup(void)
 #endif
 }
 
-int mCount = 0;
-float maxCurrent = 0;
+unsigned long mCount = 0UL;
+unsigned long inaMilliDiff = 0UL;
+bool currentRead = false;
+float busvoltage = 0.0f;
+float current_mA = 0.0f;  // Modified INA219 board that can measure up to 5.4A
+float maxCurrent = 0.0f;
+String lastMessage = "";
 
 void loop(void)
 {
@@ -182,21 +208,30 @@ void loop(void)
   MDNS.update();
 #endif
   unsigned long newMillis = millis();
-  unsigned long inaMilliDiff = (newMillis >= lastInaReportMillis) ? newMillis - lastInaReportMillis : lastInaReportMillis - newMillis;
-  float busvoltage = inaInitialized ? ina219.getBusVoltage_V() : 0.0f;
-  float current_mA = inaInitialized ? ina219.getCurrent_mA() * 1.70f : 0.0f;  // Modified INA219 board that can measure up to 5.4A
+  inaMilliDiff = (newMillis >= lastInaReportMillis) ? newMillis - lastInaReportMillis : lastInaReportMillis - newMillis;
+  busvoltage = inaInitialized ? ina219.getBusVoltage_V() : 0.0f;
+  current_mA = inaInitialized ? ina219.getCurrent_mA() * 1.70f : 0.0f;  // Modified INA219 board that can measure up to 5.4A
   mCount++;
   if (current_mA > maxCurrent) maxCurrent = current_mA;
   
-  if (inaMilliDiff > 5000UL && inaInitialized)
+  if (inaInitialized && current_mA > 5000)
   {
-    Serial.print("Samples: "); Serial.print(mCount); Serial.print(", max current: "); Serial.print(maxCurrent); Serial.print(", ");
-    Serial.print("Bus Voltage: "); Serial.print(busvoltage); Serial.print(" V, ");
-    Serial.print("Current: "); Serial.print(current_mA); Serial.println(" mA");
-    lastInaReportMillis = newMillis;
-    mCount = 0;
-    maxCurrent = 0.0f;
+    // Cut the power
+    digitalWrite(PWR_PIN, 0);
+    lastMessage = "Current limit exceeded, current: ";
+    lastMessage += current_mA;
+    lastMessage += "mA";
+    Serial.println(lastMessage);
   }
+
+  if (currentRead)
+  {
+    lastInaReportMillis = newMillis;
+    mCount = 0UL;
+    maxCurrent = 0.0f;
+    currentRead = false;
+  }
+
   if (authenticateDelay > 0)
   {
     unsigned long authFailMilliDiff = (newMillis >= lastAuthFailMillis) ? newMillis - lastAuthFailMillis : lastAuthFailMillis - newMillis;
@@ -211,5 +246,6 @@ void loop(void)
   else
   {
     lastAuthFailMillis = newMillis;
+    delay(5);
   }
 }
