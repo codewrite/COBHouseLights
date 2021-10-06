@@ -5,8 +5,8 @@ Vue.component('on-off-control', {
     },
     data: function () {
       return {
-        //ledControlUrl: "https://wemos1",
-        ledControlUrl: "https://192.168.1.211",
+        //ledControlUrl: "http://wemos1",
+        ledControlUrl: "http://192.168.1.211",
         ledOn: []
       }
     },

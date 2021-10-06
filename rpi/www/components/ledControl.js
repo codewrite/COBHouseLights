@@ -5,8 +5,8 @@ Vue.component('led-control', {
     },
     data: function () {
       return {
-        //ledControlUrl: "https://wemos1/leds",
-        ledControlUrl: "https://192.168.1.211/leds",
+        //ledControlUrl: "http://wemos1/leds",
+        ledControlUrl: "http://192.168.1.211/leds",
         ledBrightness: []
       }
     },
