@@ -193,7 +193,7 @@ void SetupApi()
         statusStr += ",\"busvoltage\":";
         statusStr += busvoltage;
         statusStr += ",\"current\":";
-        statusStr += current_mA;
+        statusStr += sum_current_mA / mCount;
         statusStr += ",\"maxcurrent\":";
         statusStr += maxCurrent;
         statusStr += ",\"lastMessage\":\"";

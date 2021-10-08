@@ -146,6 +146,7 @@ void setup(void)
     analogWrite(pinMap[i][1], 0);
 #else
     pinMode(pinMap[i][1], OUTPUT);
+    analogWriteRange(1023);
     pinOnValue[i] = false;
 #endif
     pinPWMValue[i] = 0;
@@ -198,6 +199,7 @@ unsigned long inaMilliDiff = 0UL;
 bool currentRead = false;
 float busvoltage = 0.0f;
 float current_mA = 0.0f;  // Modified INA219 board that can measure up to 5.4A
+float sum_current_mA = 0.0f;
 float maxCurrent = 0.0f;
 String lastMessage = "";
 
@@ -211,6 +213,7 @@ void loop(void)
   inaMilliDiff = (newMillis >= lastInaReportMillis) ? newMillis - lastInaReportMillis : lastInaReportMillis - newMillis;
   busvoltage = inaInitialized ? ina219.getBusVoltage_V() : 0.0f;
   current_mA = inaInitialized ? ina219.getCurrent_mA() * 1.70f : 0.0f;  // Modified INA219 board that can measure up to 5.4A
+  sum_current_mA += current_mA;
   mCount++;
   if (current_mA > maxCurrent) maxCurrent = current_mA;
   
@@ -229,6 +232,7 @@ void loop(void)
     lastInaReportMillis = newMillis;
     mCount = 0UL;
     maxCurrent = 0.0f;
+    sum_current_mA = 0.0f;
     currentRead = false;
   }
 
